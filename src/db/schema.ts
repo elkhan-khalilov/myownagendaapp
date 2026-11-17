@@ -10,6 +10,12 @@ import type {
   UserSettings,
 } from '@/types';
 import { buildSeedRecords } from './seed';
+import type { Tombstone } from '@/sync/merge';
+
+export interface MetaEntry {
+  key: string;
+  value: unknown;
+}
 
 export const DB_NAME = 'myagenda';
 
@@ -22,6 +28,10 @@ export class MyAgendaDB extends Dexie {
   budgets!: Table<Budget, string>;
   financialAccounts!: Table<FinancialAccount, string>;
   userSettings!: Table<UserSettings, string>;
+  /** Deletions waiting to be synced (local only) */
+  tombstones!: Table<Tombstone, string>;
+  /** Per-device state such as last sync time (never synced) */
+  meta!: Table<MetaEntry, string>;
 
   constructor(name = DB_NAME) {
     super(name);
@@ -55,6 +65,12 @@ export class MyAgendaDB extends Dexie {
             });
         }
       });
+
+    // v3 — cloud sync: deletion tombstones + per-device metadata
+    this.version(3).stores({
+      tombstones: 'key, table, deletedAt',
+      meta: 'key',
+    });
 
     this.on('populate', async (tx) => {
       const seed = buildSeedRecords();

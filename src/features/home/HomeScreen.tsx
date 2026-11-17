@@ -2,6 +2,9 @@
 import { AlertTriangle, Bell, CalendarDays, ChevronRight, Coins, FileText, HardDriveDownload, Settings } from 'lucide-react';
 import { PullToRefresh } from '@/components/ui/PullToRefresh';
 import { backupDue } from '@/services/backup';
+import { useSyncStore } from '@/stores/sync';
+
+const latestIso = (a?: string, b?: string) => (!a ? b : !b ? a : a > b ? a : b);
 import Link from 'next/link';
 import { BudgetRing } from '@/components/charts/BudgetRing';
 import { OccurrenceRow } from '@/components/cards/OccurrenceRow';
@@ -42,9 +45,10 @@ export function HomeScreen() {
   const next = upcoming(tasks, meetings, now, 3);
   const reminders = dueReminders(tasks, meetings, now);
   const cur = settings.currency;
+  const { enabled: syncEnabled, lastSyncAt } = useSyncStore();
   const overdue = overdueItems(tasks, meetings, now);
   const stats = completionStats(todays);
-  const needsBackup = backupDue(settings.lastBackupAt, tasks.length + meetings.length + notes.length + txs.length > 0, now);
+  const needsBackup = backupDue(latestIso(settings.lastBackupAt, syncEnabled ? lastSyncAt : undefined), tasks.length + meetings.length + notes.length + txs.length > 0, now);
 
   return (
     <PullToRefresh>

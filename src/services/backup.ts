@@ -133,9 +133,16 @@ export async function analyzeImport(backup: BackupFile, db: MyAgendaDB = getDB()
 export async function importBackup(backup: BackupFile, mode: 'merge' | 'replace', db: MyAgendaDB = getDB()) {
   let count = 0;
   const merged = mode === 'merge' ? (await plan(backup, db)).toWrite : null;
-  await db.transaction('rw', TABLES.map((t) => db.table(t)), async () => {
+  const deletedAt = new Date().toISOString();
+  await db.transaction('rw', [...TABLES.map((t) => db.table(t)), db.tombstones], async () => {
     for (const t of TABLES) {
-      if (mode === 'replace' && t !== 'userSettings') await db.table(t).clear();
+      if (mode === 'replace' && t !== 'userSettings') {
+        // Records not in the backup must also disappear on synced devices
+        const keep = new Set((backup.data[t] ?? []).map((r) => r.id as string));
+        const removed = ((await db.table(t).toCollection().primaryKeys()) as string[]).filter((id) => !keep.has(id));
+        await db.tombstones.bulkPut(removed.map((id) => ({ key: `${t}:${id}`, table: t, id, deletedAt })));
+        await db.table(t).clear();
+      }
       const rows = merged ? merged[t] : backup.data[t];
       if (!rows?.length) continue;
       await db.table(t).bulkPut(rows);

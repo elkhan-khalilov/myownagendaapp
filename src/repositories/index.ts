@@ -2,7 +2,7 @@ import { getDB } from '@/db/schema';
 import { SETTINGS_ID } from '@/db/seed';
 import type { Budget, Meeting, Note, Task, Transaction, TransactionCategory, UserSettings } from '@/types';
 import { nowISO, uuid } from '@/utils/id';
-import { createRepository } from './base';
+import { addTombstone, createRepository } from './base';
 
 export const tasksRepo = createRepository<Task>(() => getDB().tasks, 'tasks');
 export const meetingsRepo = createRepository<Meeting>(() => getDB().meetings, 'meetings');
@@ -31,7 +31,10 @@ export async function setBudgetLimit(categoryId: string, limit: number) {
   const db = getDB();
   const existing = await db.budgets.where('categoryId').equals(categoryId).first();
   if (limit <= 0) {
-    if (existing) await db.budgets.delete(existing.id);
+    if (existing) {
+      await db.budgets.delete(existing.id);
+      await addTombstone('budgets', existing.id);
+    }
     return;
   }
   const ts = nowISO();
@@ -49,8 +52,12 @@ export async function deleteCategory(id: string): Promise<boolean> {
   const used = await db.transactions.where('categoryId').equals(id).count();
   if (used > 0) return false;
   await db.transactionCategories.delete(id);
+  await addTombstone('transactionCategories', id);
   const b = await db.budgets.where('categoryId').equals(id).first();
-  if (b) await db.budgets.delete(b.id);
+  if (b) {
+    await db.budgets.delete(b.id);
+    await addTombstone('budgets', b.id);
+  }
   return true;
 }
 

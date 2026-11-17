@@ -16,6 +16,7 @@ import { WifiOff } from 'lucide-react';
 import { useMeetings, useSettings, useTasks } from '@/hooks/useData';
 import { useNow } from '@/hooks/useNow';
 import { registerServiceWorker } from '@/pwa/register';
+import { initSync } from '@/services/sync';
 import { dueReminders } from '@/services/recurrence';
 import { useUI } from '@/stores/ui';
 
@@ -84,6 +85,14 @@ export function AppShell({ children }: { children: ReactNode }) {
       useUI.getState().showToast({ message: 'Yeni versiya hazırdır', actionLabel: 'Yenilə', action: apply, sticky: true }),
     );
     if (navigator.storage?.persist) navigator.storage.persist().catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    let cleanup: (() => void) | undefined;
+    initSync()
+      .then((c) => (cleanup = c))
+      .catch(() => console.warn('[sync] init failed'));
+    return () => cleanup?.();
   }, []);
 
   return (

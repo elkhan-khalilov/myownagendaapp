@@ -1,6 +1,17 @@
 import type { Table } from 'dexie';
 import type { BaseRecord } from '@/types';
 import { nowISO, uuid } from '@/utils/id';
+import { getDB } from '@/db/schema';
+import type { SyncTable } from '@/sync/merge';
+
+/** Record a deletion so it propagates to other devices on the next sync */
+export async function addTombstone(table: string, id: string) {
+  try {
+    await getDB().tombstones.put({ key: `${table}:${id}`, table: table as SyncTable, id, deletedAt: nowISO() });
+  } catch {
+    /* tombstone bookkeeping must never block a delete */
+  }
+}
 
 export class RepositoryError extends Error {
   constructor(message: string, public cause?: unknown) {
@@ -44,9 +55,15 @@ export function createRepository<T extends BaseRecord>(table: () => Table<T, str
       return guard(`${name}.remove`, async () => {
         const rec = await table().get(id);
         await table().delete(id);
+        if (rec) await addTombstone(table().name, id);
         return rec;
       });
     },
-    restore: (rec: T) => guard(`${name}.restore`, () => table().put(rec)),
+    /** Undo a delete: the record comes back with a fresh updatedAt so it wins over the tombstone */
+    restore: (rec: T) =>
+      guard(`${name}.restore`, async () => {
+        await table().put({ ...rec, updatedAt: nowISO() });
+        await getDB().tombstones.delete(`${table().name}:${rec.id}`);
+      }),
   };
 }

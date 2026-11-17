@@ -11,6 +11,7 @@ import { updateSettings } from '@/repositories';
 import type { ThemeMode } from '@/types';
 import { CategoriesSheet } from './CategoriesSheet';
 import { DataSheet, lastBackupLabel } from './DataSheet';
+import { useSyncStore } from '@/stores/sync';
 import { GoalsSheet } from './GoalsSheet';
 import { ProfileSheet } from './ProfileSheet';
 
@@ -20,6 +21,7 @@ export function SettingsScreen() {
   const settings = useSettings();
   const router = useRouter();
   const [sub, setSub] = useState<SubSheet>(null);
+  const syncState = useSyncStore();
 
   useEffect(() => {
     const open = new URLSearchParams(window.location.search).get('open');
@@ -74,7 +76,11 @@ export function SettingsScreen() {
             <a.icon size={20} className="text-white/85" />
             <span className="flex-1">
               {a.label}
-              {a.key === 'sync' && <span className="block text-[12px] text-white/50">{lastBackupLabel(settings.lastBackupAt)}</span>}
+              {a.key === 'sync' && (
+                <span className="block text-[12px] text-white/50">
+                  {syncState.enabled ? (syncState.phase === 'syncing' ? 'GitHub · sinxronlaşdırılır…' : syncState.phase === 'signed_out' ? 'GitHub · yenidən daxil olun' : 'GitHub sinxronizasiyası aktiv') : lastBackupLabel(settings.lastBackupAt)}
+                </span>
+              )}
             </span>
             <ChevronRight size={16} className="text-white/35" />
           </button>

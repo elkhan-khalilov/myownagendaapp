@@ -9,6 +9,7 @@ import { analyzeImport, BACKUP_REMINDER_DAYS, buildBackup, importBackup, shareOr
 import { confirmAction, useUI } from '@/stores/ui';
 import { formatDayMonth, toKey } from '@/utils/date';
 import { haptic } from '@/utils/haptics';
+import { AccountSection } from './AccountSection';
 
 export function lastBackupLabel(iso?: string) {
   if (!iso) return 'Hələ ehtiyat nüsxə çıxarılmayıb';
@@ -81,16 +82,18 @@ export function DataSheet({ open, onClose }: { open: boolean; onClose: () => voi
   }
 
   return (
-    <Sheet open={open} onClose={onClose} title="Sinxronizasiya və ehtiyat nüsxə">
+    <Sheet open={open} onClose={onClose} title="Sinxronizasiya və ehtiyat nüsxə" tall>
       <div className="space-y-3 pb-2 pt-1">
+        <AccountSection />
+        <h3 className="px-1 pt-2 text-[13px] font-semibold text-muted">Əl ilə ehtiyat nüsxə (JSON fayl)</h3>
         <div className="flex items-center gap-3 rounded-2xl bg-bg p-4 text-[14px]">
           <CheckCircle2 size={20} className={settings.lastBackupAt ? 'text-income' : 'text-muted'} />
           <span>{lastBackupLabel(settings.lastBackupAt)}</span>
         </div>
         <div className="rounded-2xl bg-p-yellow p-4 text-[13.5px]">
-          Məlumatlar yalnız bu cihazda (brauzerin IndexedDB yaddaşında, şifrələnmədən) saxlanılır. Avtomatik bulud ehtiyatı və
-          sinxronizasiya yoxdur. iOS istifadə olunmayan saytların yaddaşını silə bilər, ona görə nüsxəni {BACKUP_REMINDER_DAYS} gündə bir
-          çıxarın: paylaşma menyusundan «Fayllarda saxla» (iCloud Drive) seçə bilərsiniz.
+          Məlumatlar cihazda (IndexedDB, şifrələnmədən) saxlanılır. Bulud sinxronizasiyası aktivdirsə, nüsxə həm də private GitHub
+          reponuzdadır (hər dəyişiklik bir commit). Sinxronizasiya söndürülübsə, nüsxəni {BACKUP_REMINDER_DAYS} gündə bir çıxarın:
+          paylaşma menyusundan «Fayllarda saxla» (iCloud Drive) seçə bilərsiniz.
         </div>
         <Button className="w-full" onClick={exportAll} disabled={busy}>
           <Download size={18} /> Ehtiyat nüsxə çıxar / paylaş

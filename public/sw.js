@@ -40,6 +40,8 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
+  // API calls (auth, sync) always go to the network and are never cached
+  if (url.pathname.startsWith('/api/')) return;
 
   // Hashed build assets: cache-first
   if (url.pathname.startsWith('/_next/static/') || url.pathname.startsWith('/icons/') || url.pathname.startsWith('/images/')) {

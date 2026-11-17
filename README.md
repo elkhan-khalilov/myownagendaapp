@@ -99,6 +99,37 @@ Automatic or cloud backup is **not** implemented. An offline PWA cannot write to
 
 ---
 
+## Cloud sync (private GitHub repo + passkeys)
+
+Optional. The app stays fully local-first, and sync adds a copy of the data in a **private** GitHub repo, shared between your devices.
+
+**How it works**
+- Vercel serverless functions (`/api/*`) hold the GitHub token. The browser never sees it.
+- Data lives in `data.json` in the private data repo. Every sync that changes something is a commit, so the repo history is a full versioned backup.
+- Conflicts resolve per record by last-writer-wins (`updatedAt`). Deletions are tombstones, so a record deleted on one device disappears on the others, and undo brings it back everywhere.
+- Sign-in uses **passkeys** (WebAuthn: Face ID / Touch ID). The server stores only public keys, in `auth.json`. A one-time **recovery code** (shown once; only its scrypt hash is stored) lets you sign in on a device without a passkey, after which you add one.
+- Sessions use HttpOnly, Secure, SameSite=Strict signed cookies valid for 30 days. Every POST is protected against CSRF by an Origin check plus a custom header.
+- Sync runs on app start, 2.5 s after edits, when the app returns to the foreground, when the connection comes back, and every 5 minutes.
+
+**Environment variables (Vercel → Settings → Environment Variables)**
+
+| Key | Value |
+|---|---|
+| `GITHUB_TOKEN` | Fine-grained token: *Only select repositories* → the data repo, *Contents: Read and write* |
+| `DATA_REPO` | `owner/repo` of the **private** data repo |
+| `SESSION_SECRET` | 32+ random characters (`openssl rand -base64 32`) |
+| `DATA_BRANCH` | optional; defaults to the repo's default branch |
+
+Changing a variable takes effect on the next deployment (Vercel → Deployments → ⋯ → Redeploy).
+
+**First-time setup**
+1. Open the app → Parametrlər → Sinxronizasiya.
+2. Enter the **setup code**. It is derived from `SESSION_SECRET`: `node -e "const h=require('crypto').createHmac('sha256',process.argv[1]).update('myagenda-setup-code').digest('hex').slice(0,12).toUpperCase();console.log(h.match(/.{4}/g).join('-'))" "<SESSION_SECRET>"`
+3. Tap *Face ID ilə hesab yarat*, then save the recovery code it shows.
+4. On another device: *Face ID ilə daxil ol* (an iCloud Keychain passkey syncs between your Apple devices), or use the recovery code and then *Passkey əlavə et*.
+
+**Notes:** the data in GitHub is plain JSON. GitHub encrypts it at rest and in transit, but anyone with access to the repo can read it, so keep the repo private. Passkeys are bound to the domain, so Vercel *preview* URLs need their own registration. Use the production URL.
+
 ## Features
 
 | Area | What works |
@@ -150,7 +181,7 @@ tests/             Vitest     e2e/   Playwright
 
 ## Known limitations
 
-- No cloud sync or automatic backup. Backups are manual JSON exports.
+- Cloud sync uses a GitHub repo as storage: fine for personal use, but not built for many users or very large data (> a few MB).
 - Reminders only fire while the app is open (toast, plus a system notification if permitted). Background push on iOS needs a Home Screen install on iOS 16.4+ and a Web Push backend, which is not part of v1.
 - Haptic feedback uses the Vibration API, which iOS Safari does not support. On iPhone it does nothing; on Android it works.
 - iOS may evict website storage after long inactivity. The app requests persistent storage, but iOS can still clear it, so regular backups matter.

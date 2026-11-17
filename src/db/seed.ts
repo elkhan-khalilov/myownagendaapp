@@ -1,5 +1,4 @@
 import type { FinancialAccount, TransactionCategory, UserSettings } from '@/types';
-import { nowISO } from '@/utils/id';
 
 export const DEFAULT_ACCOUNT_ID = 'acc-cash';
 export const SETTINGS_ID = 'main';
@@ -25,7 +24,8 @@ const INCOME: Array<[string, string, string, string]> = [
 ];
 
 export function buildSeedRecords() {
-  const ts = nowISO();
+  // Epoch timestamps: seed defaults must never win over real data during sync
+  const ts = new Date(0).toISOString();
   const mk = (type: 'income' | 'expense') => (row: [string, string, string, string], i: number): TransactionCategory => ({
     id: row[0],
     name: row[1],
