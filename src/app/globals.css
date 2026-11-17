@@ -1,0 +1,88 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: 247 249 252;
+  --card: 255 255 255;
+  --soft: 233 239 249;
+  --ink: 23 35 59;
+  --muted: 116 130 155;
+  --line: 230 235 243;
+  --p-blue: 221 241 255;
+  --p-red: 255 229 229;
+  --p-purple: 234 229 255;
+  --p-green: 224 248 235;
+  --p-yellow: 255 244 217;
+  color-scheme: light;
+}
+
+.dark {
+  --bg: 11 22 41;
+  --card: 19 35 61;
+  --soft: 30 50 82;
+  --ink: 236 241 250;
+  --muted: 148 164 190;
+  --line: 37 57 90;
+  --p-blue: 27 53 90;
+  --p-red: 70 35 46;
+  --p-purple: 50 43 90;
+  --p-green: 22 62 52;
+  --p-yellow: 70 58 30;
+  color-scheme: dark;
+}
+
+html,
+body {
+  min-height: 100%;
+  background: rgb(var(--bg));
+  color: rgb(var(--ink));
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+  overscroll-behavior-y: none;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Helvetica Neue', 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* iOS zooms into inputs under 16px */
+input,
+select,
+textarea {
+  font-size: 16px;
+}
+
+button {
+  touch-action: manipulation;
+}
+
+@layer utilities {
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+  .pb-safe-2 {
+    padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
+  }
+  .pb-safe-3 {
+    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
