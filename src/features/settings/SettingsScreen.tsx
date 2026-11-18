@@ -101,7 +101,7 @@ export function SettingsScreen() {
         />
       </div>
 
-      <p className="mt-8 text-center text-[12px] text-white/40">MyAgenda v1.0 · məlumatlar bu cihazda saxlanılır</p>
+      <p className="mt-8 text-center text-[12px] text-white/40">MyAgenda v1.2 · build {process.env.NEXT_PUBLIC_BUILD_ID}</p>
 
       <ProfileSheet open={sub === 'profile'} onClose={() => setSub(null)} />
       <CategoriesSheet open={sub === 'categories'} onClose={() => setSub(null)} />
