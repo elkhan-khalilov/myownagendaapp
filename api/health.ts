@@ -1,24 +1,24 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 
+import { readEnv } from '../server/env.js';
+
 /**
  * Diagnostics without secrets: is the function running, are env vars present,
  * can the token reach the data repo? Returns only booleans and HTTP status codes.
- * Deliberately has no imports from server/ so it works even if those fail to load.
  */
 export default async function handler(_req: IncomingMessage, res: ServerResponse) {
-  const token = process.env.GITHUB_TOKEN ?? '';
-  const repo = (process.env.DATA_REPO ?? '').trim();
-  const secret = (process.env.SESSION_SECRET ?? '').trim();
-  const t = token.trim();
+  const env = readEnv();
+  const t = env.token;
+  const repo = env.repo;
   const out: Record<string, unknown> = {
-    ok: true,
+    ok: env.problems.length === 0,
     node: process.version,
+    problems: env.problems,
     env: {
       GITHUB_TOKEN: t.length > 0,
-      tokenHasWhitespaceOrQuotes: t.length > 0 && (t !== token || /["'\s]/.test(t)),
       tokenType: t.startsWith('github_pat_') ? 'fine-grained' : t.startsWith('ghp_') ? 'classic' : t ? 'unknown' : 'missing',
-      DATA_REPO_format_ok: /^[\w.-]+\/[\w.-]+$/.test(repo),
-      SESSION_SECRET_length_ok: secret.length >= 32,
+      DATA_REPO: repo || null,
+      SESSION_SECRET_length: env.secret.length,
     },
   };
   if (t && /^[\w.-]+\/[\w.-]+$/.test(repo)) {

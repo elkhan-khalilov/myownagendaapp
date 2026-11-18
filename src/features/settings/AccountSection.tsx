@@ -71,10 +71,16 @@ export function AccountSection() {
       </Box>
     );
 
-  if (status === 'not_configured')
+  if (typeof status === 'object' && 'notConfigured' in status)
     return (
-      <Box icon={<CloudOff size={20} className="text-muted" />} title="Bulud sinxronizasiyası">
-        <p className="text-[13.5px] text-muted">Server ayarları tamamlanmayıb: Vercel-də GITHUB_TOKEN, DATA_REPO və SESSION_SECRET dəyişənlərini yoxlayın.</p>
+      <Box icon={<CloudOff size={20} className="text-muted" />} title="Server ayarları tamamlanmayıb">
+        <p className="text-[13.5px] text-muted">Vercel → Settings → Environment Variables bölməsini yoxlayın, sonra yenidən deploy edin:</p>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-[13.5px] font-medium">
+          {(status.notConfigured.length ? status.notConfigured : ['GITHUB_TOKEN, DATA_REPO, SESSION_SECRET']).map((p) => (
+            <li key={p}>{p}</li>
+          ))}
+        </ul>
+        <Button variant="soft" className="mt-3 h-10 w-full" onClick={() => void refresh()}>Yenidən yoxla</Button>
       </Box>
     );
 

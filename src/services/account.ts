@@ -37,7 +37,7 @@ async function post<T>(path: string, body: unknown = {}): Promise<T> {
   return data as T;
 }
 
-export type StatusResult = AccountStatus | 'offline' | 'not_configured' | { error: string };
+export type StatusResult = AccountStatus | 'offline' | { notConfigured: string[] } | { error: string };
 
 export async function fetchStatus(): Promise<StatusResult> {
   if (typeof navigator !== 'undefined' && !navigator.onLine) return 'offline';
@@ -47,8 +47,14 @@ export async function fetchStatus(): Promise<StatusResult> {
   } catch (e) {
     return { error: `Şəbəkə xətası: ${(e as Error)?.name ?? 'naməlum'}` };
   }
-  if (res.status === 503) return 'not_configured';
   const text = await res.text();
+  if (res.status === 503) {
+    try {
+      return { notConfigured: (JSON.parse(text) as { problems?: string[] }).problems ?? [] };
+    } catch {
+      return { notConfigured: [] };
+    }
+  }
   if (!res.ok) {
     let detail = '';
     try {

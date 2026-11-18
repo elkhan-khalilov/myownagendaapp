@@ -10,6 +10,7 @@ import { emptyState, mergeStates, stateSignature, validateState, type DataFile, 
 import { b64url, fromB64url, hashSecret, newRecoveryCode, normalizeCode, safeEqual, setupCode, signToken, verifySecret, verifyToken } from './crypto.js';
 import { checkSameOrigin, cookie, expectedOrigin, host, isLocal, jsonBody, parseCookies, rpId, send, type Req, type Res } from './http.js';
 import { ConflictError, GitHubStorage, type JsonStorage } from './storage.js';
+import { readEnv } from './env.js';
 
 export const AUTH_PATH = 'auth.json';
 export const DATA_PATH = 'data.json';
@@ -48,11 +49,9 @@ export interface Deps {
 
 /** Builds dependencies from environment variables; null when not configured. */
 export function depsFromEnv(): Deps | null {
-  const token = process.env.GITHUB_TOKEN?.trim();
-  const repo = process.env.DATA_REPO?.trim();
-  const secret = process.env.SESSION_SECRET?.trim();
-  if (!token || !repo || !secret || secret.length < 32 || !/^[\w.-]+\/[\w.-]+$/.test(repo)) return null;
-  return { storage: new GitHubStorage(token, repo, process.env.DATA_BRANCH?.trim() || undefined), secret };
+  const env = readEnv();
+  if (env.problems.length) return null;
+  return { storage: new GitHubStorage(env.token, env.repo, env.branch), secret: env.secret };
 }
 
 type Handler = (req: Req, res: Res, deps: Deps) => Promise<void>;
@@ -63,7 +62,7 @@ export function route(handler: Handler, opts: { method: 'GET' | 'POST'; depsFact
     if (req.method !== opts.method) return send(res, 405, { error: 'method_not_allowed' });
     if (opts.method === 'POST' && !checkSameOrigin(req)) return send(res, 403, { error: 'forbidden' });
     const deps = (opts.depsFactory ?? depsFromEnv)();
-    if (!deps) return send(res, 503, { error: 'not_configured' });
+    if (!deps) return send(res, 503, { error: 'not_configured', problems: opts.depsFactory ? undefined : readEnv().problems });
     try {
       await handler(req, res, deps);
     } catch (e) {
