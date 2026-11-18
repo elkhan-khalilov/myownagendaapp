@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Button, Field, Input } from '@/components/ui/controls';
 import {
   AccountError, defaultDeviceName, fetchStatus, loginPasskey, loginWithRecoveryCode, logout, passkeysSupported, registerPasskey, removeDevice,
-  rotateRecoveryCode, type AccountStatus,
+  rotateRecoveryCode, type StatusResult,
 } from '@/services/account';
 import { syncNow } from '@/services/sync';
 import { confirmAction, useUI } from '@/stores/ui';
@@ -22,7 +22,7 @@ const time = (iso?: string) => {
 export function AccountSection() {
   const showToast = useUI((s) => s.showToast);
   const sync = useSyncStore();
-  const [status, setStatus] = useState<AccountStatus | 'offline' | 'not_configured' | null>(null);
+  const [status, setStatus] = useState<StatusResult | null>(null);
   const [busy, setBusy] = useState(false);
   const [setupCode, setSetupCode] = useState('');
   const [deviceName, setDeviceName] = useState(defaultDeviceName());
@@ -57,6 +57,16 @@ export function AccountSection() {
     return (
       <Box icon={<CloudOff size={20} className="text-muted" />} title="Bulud sinxronizasiyası">
         <p className="text-[13.5px] text-muted">Hesab vəziyyətini yoxlamaq üçün internet lazımdır.</p>
+        <Button variant="soft" className="mt-3 h-10 w-full" onClick={() => void refresh()}>Yenidən yoxla</Button>
+      </Box>
+    );
+
+  if (typeof status === 'object' && 'error' in status)
+    return (
+      <Box icon={<CloudOff size={20} className="text-expense" />} title="Server cavab vermədi">
+        <p className="text-[13.5px] text-muted">
+          Sinxronizasiya serveri xəta qaytardı: <b className="text-ink">{status.error}</b>
+        </p>
         <Button variant="soft" className="mt-3 h-10 w-full" onClick={() => void refresh()}>Yenidən yoxla</Button>
       </Box>
     );

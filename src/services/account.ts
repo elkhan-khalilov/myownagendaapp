@@ -37,14 +37,23 @@ async function post<T>(path: string, body: unknown = {}): Promise<T> {
   return data as T;
 }
 
-export async function fetchStatus(): Promise<AccountStatus | 'offline' | 'not_configured'> {
+export type StatusResult = AccountStatus | 'offline' | 'not_configured' | { error: string };
+
+export async function fetchStatus(): Promise<StatusResult> {
+  if (typeof navigator !== 'undefined' && !navigator.onLine) return 'offline';
+  let res: Response;
   try {
-    const res = await fetch('/api/auth/status', { credentials: 'same-origin', cache: 'no-store' });
-    if (res.status === 503) return 'not_configured';
-    if (!res.ok) return 'offline';
-    return (await res.json()) as AccountStatus;
+    res = await fetch('/api/auth/status', { credentials: 'same-origin', cache: 'no-store' });
+  } catch (e) {
+    return { error: `Şəbəkə xətası: ${(e as Error)?.name ?? 'naməlum'}` };
+  }
+  if (res.status === 503) return 'not_configured';
+  const text = await res.text();
+  if (!res.ok) return { error: `HTTP ${res.status}${res.status === 404 ? ' — server funksiyası tapılmadı' : ''}` };
+  try {
+    return JSON.parse(text) as AccountStatus;
   } catch {
-    return 'offline';
+    return { error: `HTTP ${res.status} — gözlənilməz cavab (JSON deyil)` };
   }
 }
 
