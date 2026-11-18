@@ -67,8 +67,11 @@ export function route(handler: Handler, opts: { method: 'GET' | 'POST'; depsFact
     try {
       await handler(req, res, deps);
     } catch (e) {
-      console.error('[api] error:', (e as Error)?.name, (e as Error)?.message?.slice(0, 80));
-      send(res, 500, { error: 'server_error' });
+      const msg = (e as Error)?.message ?? '';
+      console.error('[api] error:', (e as Error)?.name, msg.slice(0, 80));
+      // Safe diagnostic code (GitHub HTTP status only, never tokens or data)
+      const gh = /^github (raw read|read|write) (\d{3})$/.exec(msg);
+      send(res, 500, { error: 'server_error', detail: gh ? `github_${gh[1].replace(' ', '_')}_${gh[2]}` : (e as Error)?.name ?? 'Error' });
     }
   };
 }

@@ -49,7 +49,21 @@ export async function fetchStatus(): Promise<StatusResult> {
   }
   if (res.status === 503) return 'not_configured';
   const text = await res.text();
-  if (!res.ok) return { error: `HTTP ${res.status}${res.status === 404 ? ' — server funksiyası tapılmadı' : ''}` };
+  if (!res.ok) {
+    let detail = '';
+    try {
+      detail = (JSON.parse(text) as { detail?: string }).detail ?? '';
+    } catch {
+      detail = /FUNCTION_INVOCATION_FAILED/.test(text) ? 'funksiya işə düşmədi' : '';
+    }
+    const hint: Record<string, string> = {
+      github_read_401: 'GitHub tokeni etibarsızdır',
+      github_read_403: 'Tokenin bu repoya icazəsi yoxdur',
+      github_write_403: 'Tokenə "Contents: Read and write" icazəsi lazımdır',
+      github_write_404: 'Token data reposuna yaza bilmir',
+    };
+    return { error: `HTTP ${res.status}${res.status === 404 ? ' — server funksiyası tapılmadı' : ''}${detail ? ` · ${hint[detail] ?? detail}` : ''}` };
+  }
   try {
     return JSON.parse(text) as AccountStatus;
   } catch {
