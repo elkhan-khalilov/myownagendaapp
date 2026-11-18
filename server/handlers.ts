@@ -6,10 +6,10 @@ import {
 } from '@simplewebauthn/server';
 import type { AuthenticationResponseJSON, AuthenticatorTransport, RegistrationResponseJSON } from '@simplewebauthn/server';
 import { createHash } from 'node:crypto';
-import { emptyState, mergeStates, stateSignature, validateState, type DataFile, type SyncState } from '../src/sync/merge';
-import { b64url, fromB64url, hashSecret, newRecoveryCode, normalizeCode, safeEqual, setupCode, signToken, verifySecret, verifyToken } from './crypto';
-import { checkSameOrigin, cookie, expectedOrigin, host, isLocal, jsonBody, parseCookies, rpId, send, type Req, type Res } from './http';
-import { ConflictError, GitHubStorage, type JsonStorage } from './storage';
+import { emptyState, mergeStates, stateSignature, validateState, type DataFile, type SyncState } from '../src/sync/merge.js';
+import { b64url, fromB64url, hashSecret, newRecoveryCode, normalizeCode, safeEqual, setupCode, signToken, verifySecret, verifyToken } from './crypto.js';
+import { checkSameOrigin, cookie, expectedOrigin, host, isLocal, jsonBody, parseCookies, rpId, send, type Req, type Res } from './http.js';
+import { ConflictError, GitHubStorage, type JsonStorage } from './storage.js';
 
 export const AUTH_PATH = 'auth.json';
 export const DATA_PATH = 'data.json';
